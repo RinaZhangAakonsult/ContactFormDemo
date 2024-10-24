@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Form Submission</title>
+</head>
+
+<body>
+    <!-- If you want to turn off the email functionality for both the staff and the user, remove the "onsubmit="sendEmail(event)"" attribute from the form tag -->
+    <!-- If you want ot turn off the email functionality for the staff only, use function "sendUserEmail(userEmail, htmlEmailBody)" instead of "sendEmail(event)" in the onsubmit attribute of the form tag -->
+    <form action="https://webto.salesforce.com/servlet/servlet.WebToLead?encoding=UTF-8&orgId=00D30000000djZM"
+        method="POST" name="signupform" class="row sign-up-form form-box" 
+        onsubmit="sendEmail(event)">
+
+        <input type="hidden" name="oid" value="00D30000000djZM">
+        <input type="hidden" name="retURL" value="https://google.com">
+
+        <!-- To make any field mandatory, add the "required" attribute to the input field -->
+        <!-- The "required" attribute is used to ensure that the field is filled out before submitting the form. -->
+        <div class="col-md-6 mt-5">
+            <p class="p-sm input-header">First Name*</p>
+            <input class="form-control name" type="text" name="first_name" required>
+        </div>
+        <div class="col-md-6 mt-5">
+            <p class="p-sm input-header">Last Name*</p>
+            <input class="form-control name" type="text" name="last_name" required>
+        </div>
+        <div class="col-md-12">
+            <p class="p-sm input-header">Company Name*</p>
+            <input class="form-control" name="company" required>
+        </div>
+        <div class="col-md-12">
+            <p class="p-sm input-header">Email address</p>
+            <input class="form-control email" type="email" name="email" required>
+        </div>
+        <div class="col-md-12">
+            <p class="p-sm input-header">Phone*</p>
+            <input class="form-control" type="text" name="phone" required>
+        </div>
+        <div class="col-md-12 mb-3">
+            <p class="p-sm input-header">Message*</p>
+            <textarea name="description" class="form-control"></textarea>
+        </div>
+        <input type="hidden" id="Campaign_ID" name="Campaign_ID" value="701PI00000CmuCJYAZ" /><br>
+        <input type="hidden" id="member_status" name="member_status" value="Responded" /><br>
+        <input type="hidden" id="lead_source" name="lead_source" value="Payments2Us ContactUs" /><br>
+        <div class="col-md-12">
+            <button type="submit" class="btn btn--theme hover--theme submit">Submit</button>
+        </div>
+    </form>
+
+    <script>
+        // Email template for the email sent to the user
+        const emailTemplate = `
+        <div class="logo">
+            <img src=[Logo URL] alt="Payments2Us Logo">
+        </div>
+    
+         <p>Dear [Customer Name],</p>
+
+        <p>Thank you for contacting [Your Company Name]. We have received your enquiry with the following details:</p>
+
+        <p>
+            Name: [Customer Name]<br>
+            Company Name: [Company Name]<br>
+            Email Address: [Customer Email]<br>
+            Phone Number: [Customer Phone Number]
+        </p>
+    
+        <p>Your message:<br>
+        [Customer Message]</p>
+        
+        <p>We appreciate you taking the time to reach out to us. We have received your enquiry and endeavour to attend to this within 2 business days. If you haven't heard back from us by the 3rd business day, please feel free to call us at [Your Company Phone Number].</p>
+        
+        <p>In the meantime, if you have any urgent questions or additional information to provide, please don't hesitate to reply to this email.</p>
+        <p>Thank you for your patience and interest in [Your Company Name]. We look forward to assisting you soon.</p>
+        <p>
+            Best regards,<br>
+            Payments2Us Team
+        </p>
+        <p>
+            (03) 8375 7210<br>
+            https://www.payments2us.com
+        </p>
+        `;
+
+        // Function to send the email to the staff and the user
+        function sendEmail(event) {
+            event.preventDefault();
+
+            var formData = new FormData(event.target);
+            // Email template for the email sent to the staff
+            var emailBody = `
+            <div class="logo">
+            <img src="https://static.helpjuice.com/helpjuice_production/uploads/upload/image/19684/4189734/P2U_Logo_Horizontal_HiRes%2B3.png" alt="Payments2Us Logo">
+            </div>
+            Hi Payments2us Team,<br>
+            This is to inform you that someone has made an enquiry using the CONTACT FORM on our website and filled in the following details:<br><br>
+            `;
+            
+
+            const userEmail = formData.get('email'); // get user email entered in the form
+            const htmlEmailBody = emailTemplate
+                // Problem: Most email clients cannot access local file paths on your computer when rendering emails, as they don't have permission to access files stored on a user's hard drive.
+                // Solution: Upload the logo to a publicly accessible web server or image hosting service (like Imgur, Cloudinary, or your website’s media server) and replace the local path with the public URL.
+                .replace(/\[Logo URL\]/g, 'https://static.helpjuice.com/helpjuice_production/uploads/upload/image/19684/4189734/P2U_Logo_Horizontal_HiRes%2B3.png') //This is the public URL of the logo
+                .replace(/\[Customer Name\]/g, `${formData.get('first_name')} ${formData.get('last_name')}`)
+                .replace(/\[Company Name\]/g, formData.get('company'))
+                .replace(/\[Customer Email\]/g, userEmail)
+                .replace(/\[Customer Phone Number\]/g, formData.get('phone'))
+                .replace(/\[Customer Message\]/g, formData.get('description'))
+                .replace(/\[Your Company Name\]/g, 'Payments2us (AAKONSULT PTY LTD)')
+                .replace(/\[Your Company Phone Number\]/g, '(03) 8375 7210')
+
+                // Add the form data to the email body (except for the Campaign_ID, member_status, retURL, oid, and lead_source fields)
+                for (var pair of formData.entries()) {
+                    if (pair[0] !== 'Campaign_ID' && pair[0] !== 'member_status' && pair[0] !== 'retURL' && pair[0] !== 'oid' && pair[0] !== 'lead_source') {
+                        emailBody += pair[0] + ': ' + pair[1] + '<br>';
+                    }
+                }
+                // Add a closing message to the email body for the staff
+                emailBody += '<br>Thank you for your time and consideration.<br><br>Best regards,<br>Payments2us Team';
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'http://127.0.0.1:5500/send-email', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        console.log('Email sent successfully');
+
+                        // If you want to turn off the email functionality for user, remove the following line of code
+                        sendUserEmail(userEmail, htmlEmailBody);
+
+                        event.target.submit();
+                    } else {
+                        console.log('Error sending email:', xhr.statusText);
+                    }
+                }
+            };
+            xhr.send(JSON.stringify({
+                to: 'max.sood@aakonsult.com', // Staff email
+                subject: 'New Form Submission',
+                body: emailBody,
+                smtpServer: 'smtp-relay.gmail.com',
+                smtpPort: 587,
+                encryption: 'TLS',
+                authentication: 'None',
+                fromAddress: 'payments2us-noreply@aakonsult.com'
+            }));
+        }
+
+        function sendUserEmail(userEmail, htmlEmailBody) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', 'http://127.0.0.1:5500/send-email', true);
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4) {
+                    if (xhr.status === 200) {
+                        console.log('Confirmation email sent to user successfully');
+                    } else {
+                        console.log('Error sending confirmation email:', xhr.statusText);
+                    }
+                }
+            };
+            xhr.send(JSON.stringify({
+                to: userEmail, // User email entered in the form
+                subject: 'Thank you for your submission!',
+                body: htmlEmailBody,
+                smtpServer: 'smtp-relay.gmail.com',
+                smtpPort: 587,
+                encryption: 'TLS',
+                authentication: 'None',
+                fromAddress: 'payments2us-noreply@aakonsult.com'
+            }));
+        }
+
+
+
+    </script>
+</body>
+
+</html>
